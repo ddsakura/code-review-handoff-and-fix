@@ -9,5 +9,8 @@
 *.swp
 *.swo
 
+# Claude Code local settings (machine-specific)
+.claude/
+
 # AI review output (generated at runtime, not committed)
 .ai-reviews/
