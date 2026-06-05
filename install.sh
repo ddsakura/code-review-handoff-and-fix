@@ -1,33 +1,23 @@
 #!/bin/sh
-# dotfiles-ai install script
-# Works both locally (after git clone) and remotely (curl | sh)
+# Installs all skills globally via npx.
 
-BASE="https://raw.githubusercontent.com/yourname/dotfiles-ai/main"
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+set -eu
 
-# Detect local vs remote install
-if [ -f "$SCRIPT_DIR/claude/commands/rh.md" ]; then
-  put() { mkdir -p "$(dirname "$2")" && cp "$SCRIPT_DIR/$1" "$2" && echo "  ✓ $2"; }
-else
-  put() { mkdir -p "$(dirname "$2")" && curl -fsSL "$BASE/$1" -o "$2" && echo "  ✓ $2"; }
-fi
+REPO="ddsakura/code-review-handoff-and-fix"
+
+command -v npx >/dev/null 2>&1 || {
+  echo "Error: npx not found. Install Node.js first: https://nodejs.org"
+  exit 1
+}
 
 echo ""
-echo "Installing dotfiles-ai..."
+echo "Installing code-review-handoff-and-fix skills..."
 echo ""
-
-echo "→ Claude commands"
-put "claude/commands/rh.md" "$HOME/.claude/commands/rh.md"
-put "claude/commands/rf.md" "$HOME/.claude/commands/rf.md"
+npx skills add "$REPO" --global
 
 echo ""
-echo "→ Codex skills"
-put "codex/skills/rf/SKILL.md" "$HOME/.codex/skills/rf/SKILL.md"
-
-echo ""
-echo "✅ Done!"
+echo "Done."
 echo ""
 echo "Usage:"
-echo "  Claude:  /rh   — review staged changes, save to .ai-reviews/latest.md"
-echo "           /rf   — apply fixes from latest review"
-echo "  Codex:   \$rf   — apply fixes from latest review"
+echo "  /rh  - review changes and save .ai-reviews/latest.md"
+echo "  /rf  - apply fixes from .ai-reviews/latest.md"

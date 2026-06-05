@@ -1,43 +1,55 @@
-# dotfiles-ai
+# code-review-handoff-and-fix
 
-Personal AI tool configurations for Claude Code and Codex.
+Agent skills for handing code review findings from one AI agent to another.
 
 ## Install
 
-**One-liner (no clone needed):**
+Install all skills:
+
 ```sh
-curl -fsSL https://raw.githubusercontent.com/yourname/dotfiles-ai/main/install.sh | sh
+npx skills add ddsakura/code-review-handoff-and-fix
 ```
 
-**Or clone first:**
+Install only `rf`:
+
 ```sh
-git clone https://github.com/yourname/dotfiles-ai
-cd dotfiles-ai && sh install.sh
+npx skills add ddsakura/code-review-handoff-and-fix --skill rf
 ```
 
-## Commands
+Install for a specific agent:
 
-### `/rh` — Review Handoff (Claude Code)
-Reviews staged changes or a PR diff using Claude's built-in review,
-then saves findings to `.ai-reviews/latest.md` for another AI to fix.
+```sh
+npx skills add ddsakura/code-review-handoff-and-fix --agent claude-code
+npx skills add ddsakura/code-review-handoff-and-fix --agent codex
+```
+
+Install globally:
+
+```sh
+npx skills add ddsakura/code-review-handoff-and-fix --global
+```
+
+## Skills
+
+Claude Code exposes installed skills as slash commands, so you can use `/rh`
+and `/rf`. Other agents can invoke the same skills by name or natural language.
+
+### `rh` - Review Handoff
+
+Reviews staged changes, unstaged tracked changes, or a PR diff, then saves
+findings to `.ai-reviews/latest.md` for another AI agent to fix.
 
 ```
 /rh          # review staged changes
 /rh 42       # review PR #42
 ```
 
-### `/rf` — Review Fix (Claude Code)
-Reads `.ai-reviews/latest.md` and applies all the fixes.
+### `rf` - Review Fix
+
+Reads `.ai-reviews/latest.md` and applies the fixes.
 
 ```
 /rf
-```
-
-### `$rf` — Review Fix (Codex)
-Same as `/rf` but for Codex. Reads `.ai-reviews/latest.md` and applies fixes.
-
-```
-$rf
 ```
 
 ## Workflow
@@ -46,11 +58,11 @@ $rf
 # 1. Stage your changes
 git add .
 
-# 2. Claude reviews and saves findings
+# 2. Review and save findings
 /rh
 
-# 3. Codex (or another Claude) applies the fixes
-$rf
+# 3. Apply fixes with another AI agent
+/rf
 ```
 
 No copy-paste. No switching windows to read comments.
@@ -58,15 +70,11 @@ No copy-paste. No switching windows to read comments.
 ## Structure
 
 ```
-dotfiles-ai/
-├── install.sh
+code-review-handoff-and-fix/
 ├── README.md
-├── claude/
-│   └── commands/
-│       ├── rh.md       # /rh — review and save
-│       └── rf.md       # /rf — read and fix
-└── codex/
-    └── skills/
-        └── rf/
-            └── SKILL.md  # $rf — read and fix
+└── skills/
+    ├── rh/
+    │   └── SKILL.md    # review and save findings
+    └── rf/
+        └── SKILL.md    # read and fix findings
 ```
