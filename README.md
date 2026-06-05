@@ -4,13 +4,13 @@ Agent skills for handing code review findings from one AI agent to another.
 
 ## Install
 
-Install all skills:
+Install all skills for the current project:
 
 ```sh
 npx skills add ddsakura/code-review-handoff-and-fix
 ```
 
-Install only `rf`:
+Install only `rf` for the current project:
 
 ```sh
 npx skills add ddsakura/code-review-handoff-and-fix --skill rf
@@ -23,10 +23,16 @@ npx skills add ddsakura/code-review-handoff-and-fix --agent claude-code
 npx skills add ddsakura/code-review-handoff-and-fix --agent codex
 ```
 
-Install globally:
+Install globally with `npx`:
 
 ```sh
 npx skills add ddsakura/code-review-handoff-and-fix --global
+```
+
+Manual global install without `npx`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ddsakura/code-review-handoff-and-fix/main/install.sh | sh
 ```
 
 ## Skills
@@ -72,6 +78,7 @@ No copy-paste. No switching windows to read comments.
 ```
 code-review-handoff-and-fix/
 ├── README.md
+├── install.sh
 └── skills/
     ├── rh/
     │   └── SKILL.md    # review and save findings

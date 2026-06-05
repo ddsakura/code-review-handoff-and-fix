@@ -31,6 +31,8 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    ```
    Always save to `.ai-reviews/latest.md`, overwriting it if it exists.
    Also save a timestamped copy: `.ai-reviews/<source>-<YYYY-MM-DD-HH-MM>.md`.
+   If `.ai-reviews/` cannot be created or written, stop and tell the user that
+   the review could not be saved.
 
    File format:
    ```markdown
@@ -64,4 +66,4 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
 - Nothing to review: tell the user to stage changes or provide a PR number.
 - No git repo: tell the user this skill requires git.
 - PR not found: ask the user to check the PR number and `gh auth status`.
-- `.ai-reviews/` unwritable: fall back to `/tmp/ai-reviews/` and warn.
+- `.ai-reviews/` unwritable: stop and tell the user the review file could not be saved.
