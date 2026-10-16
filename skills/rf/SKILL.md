@@ -66,14 +66,27 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
      current evidence, or cannot be located confidently; report a specific reason.
      A stale snapshot may still contain a valid finding: apply it only after
      reconfirming its relevance.
-   - Apply the smallest fix within the reviewed scope and verify it looks correct.
+   - Apply the smallest fix within the reviewed scope and inspect the resulting diff.
      Avoid unrelated refactoring and preserve existing user changes.
    - If fixes conflict, defer all findings involved in that unresolved conflict and
      report why; continue independent fixes. Do not choose a "safer" fix by guesswork.
 
-5. **Report when done**
+5. **Validate the fixes**
+   - Run available tests, lint, or build checks relevant to the changed behavior,
+     proportionate to the scope and risk. Add a regression test when it meaningfully
+     verifies a behavior change; prose-only edits do not require tests that merely
+     match wording.
+   - Record each check as passed, failed, or not run, with the command and relevant
+     result or reason it could not run. If a failure appears pre-existing, label it
+     that way only when baseline results or other concrete evidence support it;
+     otherwise leave its cause unresolved.
+   - Resolve failures caused by the fixes within the requested scope. If relevant
+     validation still fails or cannot run, report the change as applied with
+     validation failed or incomplete, rather than claiming the finding is fixed.
+
+6. **Report when done**
    ```text
-   Fixed X / Y findings from .ai-reviews/latest.md
+   Applied changes for X / Y findings from .ai-reviews/latest.md
 
    Applied:
    - [blocking] <title> -> <file>:<line>
@@ -82,6 +95,10 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    Skipped:
    - [nit] <title> - skipped (nit)
    - [suggestion] <title> - reason if any
+
+   Validation:
+   - [passed | failed | not run] <command> - <result or reason>
+   - <findings whose validation failed or remains incomplete, if any>
    ```
 
 ## Edge cases

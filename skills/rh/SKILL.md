@@ -54,8 +54,19 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    - These fields identify a snapshot, not permission to overwrite later edits.
 
 3. **Run a code review** on the detected changes.
-   Group findings by file, then severity: `blocking` | `important` | `suggestion` | `nit`.
-   Each finding must include: file path, line number, severity, issue, and suggested fix.
+   - Read relevant surrounding code, callers, and tests to check the changed behavior.
+     If needed context is unavailable, state the limitation instead of asserting a bug.
+   - Report a bug only when the changes introduce or expose an actionable issue with
+     a concrete trigger, impact, and supporting code evidence. Do not turn speculative
+     risks or personal style preferences into bugs, and do not invent findings to
+     meet a quota. A review with no findings is valid.
+   - Group findings by file, then severity: `blocking` | `important` | `suggestion` | `nit`.
+     Label optional improvements and style comments as `suggestion` or `nit` and
+     distinguish them explicitly from bugs.
+   - Each finding must include file path, line number, severity, issue, and suggested
+     fix. For bugs, also include the trigger, impact, and evidence (such as the
+     relevant code path or an observed test result); distinguish inference from
+     behavior actually reproduced.
 
 4. **Save the review**
    ```bash
@@ -90,7 +101,10 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    ### <file-path>
    #### [blocking] <title>
    Line: <N>
-   Issue: <description>
+   Issue: <description; identify bugs versus optional improvements>
+   Trigger: <input or condition that causes the bug; omit for optional improvements>
+   Impact: <observable consequence; omit for optional improvements>
+   Evidence: <supporting code path or observed result; omit for optional improvements>
    Fix: <suggested fix>
    ```
 
