@@ -17,6 +17,8 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    cat .ai-reviews/latest.md
    ```
    If the file does not exist, tell the user to run `/rh` first and stop.
+   If the review explicitly contains no findings, report that there is nothing
+   to apply and stop without editing files or running fix validation.
 
 2. **Check the target and snapshot** before editing:
    - For local sources, compare recorded credential-free repository identities
@@ -53,6 +55,11 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
 
 3. **Read and understand the findings**
    - Parse all findings by severity: `blocking` -> `important` -> `suggestion` -> `nit`
+   - Read `Type: bug | improvement` independently of severity and use it to select
+     the bug-confirmation or improvement-relevance checks below. For older reviews
+     without Type, use the issue description and supporting context; never infer
+     type from severity alone. If the type remains ambiguous, defer that finding
+     and report why instead of guessing.
    - Understand each issue and its suggested fix before touching any file.
 
 4. **Apply fixes in order**
@@ -75,7 +82,14 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    - Run available tests, lint, or build checks relevant to the changed behavior,
      proportionate to the scope and risk. Add a regression test when it meaningfully
      verifies a behavior change; prose-only edits do not require tests that merely
-     match wording.
+     match wording. Tests covering the changed behavior are within scope even
+     when their files were not part of the reviewed diff.
+   - Prefer read-only check modes: no automatic fixes, snapshot updates, or
+     regeneration of tracked files. Inspect the resulting diff after checks;
+     report unexpected tracked-file changes and remove only changes attributable
+     to the check, preserving all pre-existing edits and intended fixes. If those
+     changes cannot be separated safely, stop further modifying checks and report
+     the conflict rather than discarding user work.
    - Record each check as passed, failed, or not run, with the command and relevant
      result or reason it could not run. If a failure appears pre-existing, label it
      that way only when baseline results or other concrete evidence support it;

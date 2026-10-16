@@ -62,8 +62,9 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
      meet a quota. A review with no findings is valid.
    - Group findings by file, then severity: `blocking` | `important` | `suggestion` | `nit`.
      Label optional improvements and style comments as `suggestion` or `nit` and
-     distinguish them explicitly from bugs.
-   - Each finding must include file path, line number, severity, issue, and suggested
+     distinguish them explicitly from bugs using `Type: bug | improvement`.
+     Type is independent of severity; a minor bug may be a `suggestion`.
+   - Each finding must include file path, line number, severity, type, issue, and suggested
      fix. For bugs, also include the trigger, impact, and evidence (such as the
      relevant code path or an observed test result); distinguish inference from
      behavior actually reproduced.
@@ -77,6 +78,9 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    Also save a timestamped copy: `.ai-reviews/<source>-<YYYY-MM-DD-HH-MM>.md`.
    If `.ai-reviews/` cannot be created or written, stop and tell the user that
    the review could not be saved.
+
+   If there are no findings, put `No findings.` directly under `## Findings`
+   instead of emitting placeholder findings.
 
    File format:
    ```markdown
@@ -100,6 +104,7 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
 
    ### <file-path>
    #### [blocking] <title>
+   Type: <bug | improvement>
    Line: <N>
    Issue: <description; identify bugs versus optional improvements>
    Trigger: <input or condition that causes the bug; omit for optional improvements>
@@ -112,10 +117,12 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    ```text
    Review saved: .ai-reviews/latest.md
 
-   Findings: X blocking, X important, X suggestions
+   Findings: X blocking, X important, X suggestions, X nits
 
    Ready - run /rf or ask another AI agent to apply fixes from the review file.
    ```
+   When the total is zero, replace the Ready line with
+   `No findings - nothing for /rf to apply.`
 
 ## Edge cases
 
