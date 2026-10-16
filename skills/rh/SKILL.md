@@ -25,21 +25,32 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
      Do not fall back to a different source after an explicit selection.
 
 2. **Capture the reviewed source** before reviewing:
-   - Record the repository identity (remote host/owner/name with credentials removed;
-     for a repository without a remote, record its local Git common directory),
-     branch or detached state, and full `HEAD` commit (or `unborn` before the
-     first commit).
-   - For a PR, also record its URL, base/head repository identities, branches, and
-     full base/head commit IDs. Review the PR head contents, not unrelated local
-     files. Check that the PR commits did not change while fetching its diff.
-   - For local changes, save the exact reviewed patch's SHA-256 as `Diff SHA-256`.
-     Generate it with `git diff --no-ext-diff --no-textconv --binary --full-index
-     --no-color --src-prefix=a/ --dst-prefix=b/` (add `--staged` for staged mode).
-     `staged` means HEAD to index; `unstaged` means index to working tree, not
-     HEAD to working tree. Hash the saved patch bytes and review that snapshot;
-     record the index tree ID (`git write-tree`) as `Index tree` so unstaged
-     baselines can also be identified. If capture fails or the baseline changes
-     during capture, report it and retry a consistent snapshot or stop.
+   - Record credential-free repository identities (host/owner/name): use the
+     current branch's upstream remote, else `origin`, else all configured remotes.
+     If there is no remote, use the absolute Git common directory. Normalize SSH
+     and HTTPS forms. Record branch or detached state; record full `HEAD` (or
+     `unborn`) only for local sources, since local HEAD is unrelated to a PR diff.
+   - For a PR, record its URL, base/head repository identities, branches, and full
+     base/head commit IDs from GitHub, independently of local remotes. Capture
+     `gh pr view <N> --json baseRefOid,headRefOid` before and after saving
+     `gh pr diff <N>` to a temporary file. If either commit changes, retry the
+     capture or stop. Review that saved diff and PR head contents, not local files.
+   - For local changes, save the exact patch to a uniquely created temporary file
+     outside the working tree. Generate it with
+     `git diff --no-ext-diff --no-textconv --binary --full-index --no-color
+     --src-prefix=a/ --dst-prefix=b/` (add `--staged` for staged mode).
+     Check the diff command's exit status before hashing; use
+     `shasum -a 256 /path/to/saved.patch` and record the digest as `Diff SHA-256`.
+     Review those same saved bytes, not a second live diff; clean up only this
+     run's temporary files after the review is saved or capture fails.
+   - `staged` means HEAD to index; `unstaged` means index to working tree. Capture
+     `git ls-files --stage -z` to a separate temporary file and hash its exact bytes
+     as `Index SHA-256`. This is read-only and includes unmerged stage entries;
+     do not require `git write-tree`, which fails on an unmerged index and writes
+     Git objects. Compare index fingerprints and local HEAD before/after patch
+     capture. If they changed, retry or stop; do not hash output of failed commands.
+     With unmerged entries, retain the combined diff and report any context limits
+     without forcing a tree snapshot or modifying the conflict resolution.
    - These fields identify a snapshot, not permission to overwrite later edits.
 
 3. **Run a code review** on the detected changes.
@@ -61,11 +72,11 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    # Code Review - <source> - <timestamp>
    Reviewer: <agent name>
    Target: <what was reviewed>
-   Repository: <credential-free remote identity or local Git common directory>
+   Repository: <credential-free remote identity/identities or local Git common directory>
    Source: <staged | unstaged | pr>
    Branch: <branch or detached>
-   HEAD: <full commit ID or unborn>
-   Index tree: <tree ID; local sources only>
+   HEAD: <full commit ID or unborn; local sources only>
+   Index SHA-256: <SHA-256 of git ls-files --stage -z bytes; local sources only>
    Diff SHA-256: <SHA-256 of saved patch bytes; local sources only>
    PR: <URL; PR sources only>
    PR base: <repository identity, branch, full commit ID; PR sources only>

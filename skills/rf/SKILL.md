@@ -19,15 +19,29 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    If the file does not exist, tell the user to run `/rh` first and stop.
 
 2. **Check the target and snapshot** before editing:
-   - Compare the review's repository identity with the current repository. Normalize
-     SSH/HTTPS remote forms and ignore credentials; local paths alone do not identify
-     a cloned repository. For PRs, use the recorded head repository and head commit
-     as the fix target, allowing a local branch that actually contains that head.
-     If the target is demonstrably different, stop and report the mismatch.
-   - Compare the recorded HEAD, index tree, and local diff SHA-256 when present.
-     Recompute the hash using the same options and source defined in `rh`; unstaged
-     patches are relative to the index. Branch, commit, tree, or hash differences
-     signal possible staleness, not an automatic reason to discard every finding.
+   - For local sources, compare recorded credential-free repository identities
+     against all configured remotes, normalizing SSH/HTTPS forms. A match with any
+     remote is sufficient; do not assume `origin` is the only identity. For local
+     repositories without remotes, compare the absolute Git common directory.
+     If the repository is demonstrably different, stop and report the mismatch.
+   - For PR sources with a recorded head commit, check
+     `git merge-base --is-ancestor <recorded-PR-head> HEAD`. Exit 0 confirms the
+     target even for a fork PR in an upstream clone with no fork remote; remote
+     names or a head-repository mismatch alone must not reject this checkout.
+     If the head is absent, is not an ancestor, or the check fails, stop before
+     editing and tell the user to check out the PR branch, for example with
+     `gh pr checkout <N>`. Do not automatically switch branches. A matching base
+     repository or PR URL alone does not override this commit-containment check.
+   - For PRs, compare current HEAD with `PR head`, not the review's local `HEAD`.
+     Descendant commits and local edits signal possible staleness: reconfirm each
+     finding. An older or divergent checkout is a wrong target under the rule above,
+     not merely stale. Ignore legacy local HEAD/index fields for PR reviews.
+   - For local sources, compare recorded HEAD, `Index SHA-256`, and `Diff SHA-256`
+     when present. Recompute fingerprints with the same commands and source as
+     `rh`; unstaged patches are relative to the index. Differences signal possible
+     staleness, not an automatic reason to discard every finding. Older `Index tree`
+     metadata is optional: if it cannot be compared without writing Git objects,
+     note the limitation and use available fingerprints plus per-finding checks.
    - Missing metadata (including older review files) is supported: identify the
      intended target from available paths and context, and check each finding in
      current code. If repository identity remains ambiguous, request clarification
