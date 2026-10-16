@@ -17,6 +17,10 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    cat .ai-reviews/latest.md
    ```
    If the file does not exist, tell the user to run `/rh` first and stop.
+   Capture its exact bytes once and compute their full SHA-256 digest; use that
+   snapshot throughout this run even if a new review replaces `latest.md`.
+   Leave the original review and its archive unchanged. Any existing outcome
+   record belongs to this review only when its recorded digest matches.
    If the review explicitly contains no findings, report that there is nothing
    to apply and stop without editing files or running fix validation.
 
@@ -61,6 +65,12 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
      type from severity alone. If the type remains ambiguous, defer that finding
      and report why instead of guessing.
    - Understand each issue and its suggested fix before touching any file.
+   - Use each finding's `ID` as its key, scoped to the review digest. For legacy
+     reviews without IDs, use the file path plus exact finding heading and its
+     occurrence number within that file; line numbers alone are not stable keys.
+   - Read `.ai-reviews/<sha256>.outcomes.md` if present. Prior outcomes are
+     history, not proof: recheck every finding against current code on every
+     run, including findings previously marked fixed or already resolved.
 
 4. **Apply fixes in order**
    - Start with `blocking`, then `important`, then `suggestion`.
@@ -98,7 +108,17 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
      validation still fails or cannot run, report the change as applied with
      validation failed or incomplete, rather than claiming the finding is fixed.
 
-6. **Report when done**
+6. **Record outcomes, then report**
+   Save outcomes separately to `.ai-reviews/<sha256>.outcomes.md`, with the full
+   review digest, UTC run timestamp, and one entry per finding key. Record its
+   current disposition (`fixed`, `already resolved`, `skipped`, or `unresolved`),
+   reason, and verification performed. If verification fails or is incomplete,
+   record `unresolved` with any edits applied rather than label the finding fixed.
+   Preserve earlier run entries. Publish the complete updated sidecar through a
+   unique temporary file and atomic rename in the same directory; if saving fails, report that fixes may have
+   been applied but their outcomes were not saved. Do not claim they were saved.
+   A repeated ID or ambiguous legacy key must be disambiguated in the record,
+   never silently overwrite another finding's result.
    ```text
    Applied changes for X / Y findings from .ai-reviews/latest.md
 
