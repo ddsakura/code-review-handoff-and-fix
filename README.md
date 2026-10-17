@@ -43,7 +43,9 @@ and `/rf`. Other agents can invoke the same skills by name or natural language.
 ### `rh` - Review Handoff
 
 Reviews staged changes, unstaged tracked changes, or a PR diff, then saves
-findings to `.ai-reviews/latest.md` for another AI agent to fix.
+findings to `.ai-reviews/latest.md` for another AI agent to fix. Bug findings
+include a concrete trigger, impact, and code evidence; optional improvements
+are labeled separately. Reviews may have no findings.
 
 ```
 /rh          # review staged changes, or unstaged tracked changes if none are staged
@@ -61,6 +63,10 @@ applies relevant fixes while preserving existing changes. Reviews record reposit
 and snapshot metadata so `rf` can detect a wrong target or stale review. Older
 review files remain supported through context checks; skipped or conflicting
 findings are reported with reasons.
+
+Runs relevant tests, lint, or build checks proportionate to the changes. Reports
+checks as passed, failed, or not run, and identifies fixes whose validation
+is incomplete.
 
 ```
 /rf
