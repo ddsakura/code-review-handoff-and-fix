@@ -68,9 +68,12 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
    - Use each finding's `ID` as its key, scoped to the review digest. For legacy
      reviews without IDs, use the file path plus exact finding heading and its
      occurrence number within that file; line numbers alone are not stable keys.
-   - Read `.ai-reviews/<sha256>.outcomes.md` if present. Prior outcomes are
-     history, not proof: recheck every finding against current code on every
-     run, including findings previously marked fixed or already resolved.
+   - Read every published `*.md` run record in
+     `.ai-reviews/<sha256>.outcomes/`, ignoring temporary files. Also read the
+     legacy `.ai-reviews/<sha256>.outcomes.md` if present; leave it unchanged.
+     Check each record's full review digest before treating it as history.
+     Prior outcomes are history, not proof: recheck every finding against current
+     code on every run, including previously fixed or already resolved findings.
 
 4. **Apply fixes in order**
    - Start with `blocking`, then `important`, then `suggestion`.
@@ -109,31 +112,52 @@ Read `.ai-reviews/latest.md` and apply the fixes listed there.
      validation failed or incomplete, rather than claiming the finding is fixed.
 
 6. **Record outcomes, then report**
-   Save outcomes separately to `.ai-reviews/<sha256>.outcomes.md`, with the full
-   review digest, UTC run timestamp, and one entry per finding key. Record its
-   current disposition (`fixed`, `already resolved`, `skipped`, or `unresolved`),
-   reason, and verification performed. If verification fails or is incomplete,
-   record `unresolved` with any edits applied rather than label the finding fixed.
-   Preserve earlier run entries. Publish the complete updated sidecar through a
-   unique temporary file and atomic rename in the same directory; if saving fails, report that fixes may have
-   been applied but their outcomes were not saved. Do not claim they were saved.
-   A repeated ID or ambiguous legacy key must be disambiguated in the record,
-   never silently overwrite another finding's result.
+   Write this run's outcomes to its own immutable file:
+   `.ai-reviews/<sha256>.outcomes/<UTC-timestamp>-<random>.md`.
+   - Include the full review digest, unique run ID, UTC run timestamp, and one
+     entry per finding key, with its disposition, reason, and verification.
+     Use `fixed`, `already resolved`, `skipped`, `deferred`, or `unresolved`.
+     `deferred` means no fix was applied because a decision or conflict remains;
+     always record the reason. For applied edits with failed or incomplete
+     verification, use `unresolved` and describe the edits rather than claim fixed.
+   - Create the outcomes directory if needed. Write complete content to a
+     uniquely created hidden `.tmp` file in that
+     outcomes directory, then publish it exclusively without replacing a file
+     (for example, hard-link the completed temp file to the final run filename).
+     If the filename already exists, choose another name and retry. Never update
+     a shared aggregate or rename over an existing run record; simultaneous or
+     interleaved runs must each add a file, not rewrite each other's history.
+   - Leave all prior run records and the legacy sidecar unchanged. Clean up only
+     this run's temporary files. On publication failure, report that edits may
+     have been applied but outcomes were NOT saved; do not claim they were saved.
+   - Disambiguate repeated IDs or ambiguous legacy keys in the record rather than
+     silently overwrite another finding's result. Use the same keys in the report.
    ```text
    Applied changes for X / Y findings from .ai-reviews/latest.md
 
    Applied:
-   - [blocking] <title> -> <file>:<line>
-   - [important] <title> -> <file>:<line>
+   - [blocking] F001 <title> -> <file>:<line>
+   - [important] F002 <title> -> <file>:<line>
 
    Skipped:
-   - [nit] <title> - skipped (nit)
-   - [suggestion] <title> - reason if any
+   - [nit] F003 <title> - skipped (nit)
+   - [suggestion] F004 <title> - reason if any
+
+   Deferred / unresolved:
+   - [<severity>] F005 <title> - <disposition and reason>
+
+   Already resolved:
+   - [<severity>] F006 <title> - <verification>
 
    Validation:
    - [passed | failed | not run] <command> - <result or reason>
-   - <findings whose validation failed or remains incomplete, if any>
+   - <finding keys whose validation failed or remains incomplete, if any>
+
+   Outcomes: saved to .ai-reviews/<sha256>.outcomes/<run-file>.md
    ```
+   Use actual finding keys (including legacy keys) instead of the example IDs.
+   On publication failure, replace the Outcomes line with
+   `Outcomes: NOT saved - <reason>`.
 
 ## Edge cases
 
