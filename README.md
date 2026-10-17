@@ -46,13 +46,21 @@ Reviews staged changes, unstaged tracked changes, or a PR diff, then saves
 findings to `.ai-reviews/latest.md` for another AI agent to fix.
 
 ```
-/rh          # review staged changes
-/rh 42       # review PR #42
+/rh          # review staged changes, or unstaged tracked changes if none are staged
+/rh 42       # review only PR #42, even if local changes exist
 ```
+
+An explicit source takes priority over automatic selection. You can also ask
+to review only staged or only unstaged changes. If the selected source is empty
+or cannot be read, `rh` reports that and stops without switching sources.
 
 ### `rf` - Review Fix
 
-Reads `.ai-reviews/latest.md` and applies the fixes.
+Reads `.ai-reviews/latest.md`, confirms findings against the current code, and
+applies relevant fixes while preserving existing changes. Reviews record repository
+and snapshot metadata so `rf` can detect a wrong target or stale review. Older
+review files remain supported through context checks; skipped or conflicting
+findings are reported with reasons.
 
 ```
 /rf

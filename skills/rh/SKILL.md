@@ -14,17 +14,50 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
 
 ## Steps
 
-1. **Detect what to review** - check in order:
-   - `git diff --staged` for staged changes
-   - `git diff` for unstaged tracked changes
-   - `gh pr diff $ARGUMENTS` if a PR number was passed, such as `/rh 42`
-   - If nothing is found, tell the user and stop.
+1. **Select what to review**:
+   - If the user specifies a source, review only that source. For a PR number,
+     such as `/rh 42`, use `gh pr diff 42`, even if local changes exist.
+     For an explicit staged or unstaged request, use `git diff --staged` or
+     `git diff`, respectively.
+   - If no source is specified, check `git diff --staged` first. If it is empty,
+     check `git diff` for unstaged tracked changes.
+   - If the selected source is empty or cannot be read, report that and stop.
+     Do not fall back to a different source after an explicit selection.
 
-2. **Run a code review** on the detected changes.
+2. **Capture the reviewed source** before reviewing:
+   - Record credential-free repository identities (host/owner/name): use the
+     current branch's upstream remote, else `origin`, else all configured remotes.
+     If there is no remote, use the absolute Git common directory. Normalize SSH
+     and HTTPS forms. Record branch or detached state; record full `HEAD` (or
+     `unborn`) only for local sources, since local HEAD is unrelated to a PR diff.
+   - For a PR, record its URL, base/head repository identities, branches, and full
+     base/head commit IDs from GitHub, independently of local remotes. Capture
+     `gh pr view <N> --json baseRefOid,headRefOid` before and after saving
+     `gh pr diff <N>` to a temporary file. If either commit changes, retry the
+     capture or stop. Review that saved diff and PR head contents, not local files.
+   - For local changes, save the exact patch to a uniquely created temporary file
+     outside the working tree. Generate it with
+     `git diff --no-ext-diff --no-textconv --binary --full-index --no-color
+     --src-prefix=a/ --dst-prefix=b/` (add `--staged` for staged mode).
+     Check the diff command's exit status before hashing; use
+     `shasum -a 256 /path/to/saved.patch` and record the digest as `Diff SHA-256`.
+     Review those same saved bytes, not a second live diff; clean up only this
+     run's temporary files after the review is saved or capture fails.
+   - `staged` means HEAD to index; `unstaged` means index to working tree. Capture
+     `git ls-files --stage -z` to a separate temporary file and hash its exact bytes
+     as `Index SHA-256`. This is read-only and includes unmerged stage entries;
+     do not require `git write-tree`, which fails on an unmerged index and writes
+     Git objects. Compare index fingerprints and local HEAD before/after patch
+     capture. If they changed, retry or stop; do not hash output of failed commands.
+     With unmerged entries, retain the combined diff and report any context limits
+     without forcing a tree snapshot or modifying the conflict resolution.
+   - These fields identify a snapshot, not permission to overwrite later edits.
+
+3. **Run a code review** on the detected changes.
    Group findings by file, then severity: `blocking` | `important` | `suggestion` | `nit`.
    Each finding must include: file path, line number, severity, issue, and suggested fix.
 
-3. **Save the review**
+4. **Save the review**
    ```bash
    mkdir -p .ai-reviews
    grep -q '.ai-reviews/' .gitignore 2>/dev/null || echo '.ai-reviews/' >> .gitignore
@@ -39,6 +72,15 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    # Code Review - <source> - <timestamp>
    Reviewer: <agent name>
    Target: <what was reviewed>
+   Repository: <credential-free remote identity/identities or local Git common directory>
+   Source: <staged | unstaged | pr>
+   Branch: <branch or detached>
+   HEAD: <full commit ID or unborn; local sources only>
+   Index SHA-256: <SHA-256 of git ls-files --stage -z bytes; local sources only>
+   Diff SHA-256: <SHA-256 of saved patch bytes; local sources only>
+   PR: <URL; PR sources only>
+   PR base: <repository identity, branch, full commit ID; PR sources only>
+   PR head: <repository identity, branch, full commit ID; PR sources only>
 
    ## Summary
    <2-3 sentences>
@@ -52,7 +94,7 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    Fix: <suggested fix>
    ```
 
-4. **Report**
+5. **Report**
    ```text
    Review saved: .ai-reviews/latest.md
 
@@ -63,7 +105,9 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
 
 ## Edge cases
 
-- Nothing to review: tell the user to stage changes or provide a PR number.
+- Nothing to review: report which source was checked. For an automatic selection,
+  suggest staging changes or providing a PR number; for an explicit selection,
+  stop without switching sources.
 - No git repo: tell the user this skill requires git.
 - PR not found: ask the user to check the PR number and `gh auth status`.
 - `.ai-reviews/` unwritable: stop and tell the user the review file could not be saved.
