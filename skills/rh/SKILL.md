@@ -68,16 +68,29 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
      fix. For bugs, also include the trigger, impact, and evidence (such as the
      relevant code path or an observed test result); distinguish inference from
      behavior actually reproduced.
+   - Assign each finding a unique ID within this review (`F001`, `F002`, ...);
+     preserve these IDs in the saved review and use them when reporting outcomes.
 
 4. **Save the review**
    ```bash
    mkdir -p .ai-reviews
    grep -q '.ai-reviews/' .gitignore 2>/dev/null || echo '.ai-reviews/' >> .gitignore
    ```
-   Always save to `.ai-reviews/latest.md`, overwriting it if it exists.
-   Also save a timestamped copy: `.ai-reviews/<source>-<YYYY-MM-DD-HH-MM>.md`.
-   If `.ai-reviews/` cannot be created or written, stop and tell the user that
-   the review could not be saved.
+   Complete the review before publishing it:
+   - Choose an archive name such as
+     `.ai-reviews/<source>-<YYYYMMDDTHHMMSS-subsecondsZ>-<random>.md`.
+     Use UTC, a safe source label (`staged`, `unstaged`, or `pr-42`), and a
+     random suffix. Never use raw user input as a path component.
+   - Write the complete content to a uniquely created temporary file in
+     `.ai-reviews/`, then publish the archive without replacing any existing
+     file (for example, create a hard link to the completed temp file with
+     exclusive destination semantics). On a name collision, choose another name.
+   - Copy the complete archive into a second uniquely created temporary file in
+     the same directory, then atomically rename that file to `latest.md`.
+     Never truncate or write `latest.md` in place, and never edit an archive.
+   - Clean up only this run's temporary files. If any write or publication fails,
+     stop and report the failure; preserve the previous `latest.md` and any
+     completed archive. Report success only after both publications succeed.
 
    If there are no findings, put `No findings.` directly under `## Findings`
    instead of emitting placeholder findings.
@@ -105,6 +118,7 @@ findings to `.ai-reviews/latest.md` so another AI agent can apply the fixes.
    ### <file-path>
    #### [blocking] <title>
    Type: <bug | improvement>
+   ID: F001
    Line: <N>
    Issue: <description; identify bugs versus optional improvements>
    Trigger: <input or condition that causes the bug; omit for optional improvements>

@@ -85,6 +85,14 @@ git add .
 /rf
 ```
 
+Reviews retain an immutable archive with unique UTC filenames and finding IDs.
+`latest.md` is replaced atomically after the archive is saved. Fix outcomes live
+in separate immutable files under `.ai-reviews/<review-sha256>.outcomes/`, one
+per run, so overlapping saves preserve each run's history. The review stays
+unchanged; rerunning `/rf` checks current code again even for previously fixed
+findings. Reports include finding IDs, deferred reasons, and outcome-save status.
+Legacy reviews without finding IDs and older outcomes sidecars remain readable.
+
 No copy-paste. No switching windows to read comments.
 
 ## Structure
